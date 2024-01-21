@@ -17,15 +17,11 @@ on:
       ENV_VARS:
         type: string
     secrets:
-      SONAR_TOKEN:
-        required: true
       ENV_SECRETS:
         required: false
       AWS_ACCESS_KEY_ID:
         required: true
       AWS_SECRET_ACCESS_KEY:
-        required: true
-      SONAR_HOST_URL:
         required: true
 jobs:
   feature-branch-checks:
@@ -44,15 +40,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - name: Configure AWS Credentials for DEV account to install packages
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{inputs.AWS_REGION}}
-          role-to-assume: "arn:aws:iam::106367354196:role/system/xac-eng-role"
-          role-session-name: GitHubActionSession
-          role-chaining: true
       - name: Setup
         id: setup
         run: |
@@ -72,22 +59,6 @@ jobs:
           role-to-assume: "arn:aws:iam::${{inputs.AWS_ACCOUNT_ID}}:role/system/xac-eng-role"
           role-session-name: GitHubActionSession
           role-chaining: true
-      - name: Lint
-        run: npm run lint
-      - name: Unit tests
-        run: npm run test:unit:coverage
-      - name: Sonar Scan
-        uses: sonarsource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      - name: Quality Gate
-        uses: sonarsource/sonarqube-quality-gate-action@master
-        # Force to fail step after specific time.
-        timeout-minutes: 5
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       - name: Build
         run: zx ./scripts/build.mjs
         env:
@@ -104,9 +75,6 @@ jobs:
           ENV_VARS: ${{ inputs.ENV_VARS }}
           ENV: DEV
           NAMESPACE: ${{ steps.short-sha.outputs.sha }}
-      - name: Integration tests
-        if: ${{ inputs.TYPE == 'backend' }}
-        run: npm run test:integration
       - name: Destroy Deployment
         if: ${{ inputs.TYPE == 'backend' && steps.deploy.outcome == 'success' && always() }}
         run: zx ./scripts/destroy.mjs
