@@ -1,0 +1,52 @@
+name: Sample Template Checks
+run-name: ${{ github.actor }} is running checks on feature branch
+on:
+  workflow_call:
+    inputs:
+      TYPE:
+        type: string
+        required: true
+      AWS_ACCOUNT_ID:
+        type: string
+        required: false
+        default: ''
+      AWS_REGION:
+        type: string
+        required: false
+        default: 'us-east-1'
+      ENV_VARS:
+        type: string
+    secrets:
+      ENV_SECRETS:
+        required: false
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  sample-template-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync build/ s3://forte-ads-test/ --delete 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: 'us-east-1'
