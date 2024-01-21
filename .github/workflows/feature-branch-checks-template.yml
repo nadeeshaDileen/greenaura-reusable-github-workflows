@@ -56,9 +56,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{inputs.AWS_REGION}}
-          role-to-assume: "arn:aws:iam::${{inputs.AWS_ACCOUNT_ID}}:role/github-actions-role"
-          role-session-name: GitHubActionSession
-          role-chaining: true
       - name: Build
         run: zx ./scripts/build.mjs
         env:
